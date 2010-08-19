@@ -10,4 +10,45 @@ I HAVE A FEELING A LOT OF PEOPLE WILL DEMAND TO KNOW:
  _____________________________     _    LANGUAGE - WHEN YOU  
 |_____________________________|   |_|   JUST ADD THEM BECAUSE!
 
+Macro expansion for situationists? What does that even mean?
 
+sit·u·a·tion·ism   [sich-oo-ey-shuh-niz-uhm]
+–noun Psychology .
+the theory that behavior is chiefly response to immediate situations.
+
+When we are programming our immediate situation is text, syntax, grammar.
+
+When we are programming in php our text, syntax, grammar is pretty much all decided for us ahead of time. And a lot of the choices that were made ahead of time by the not-so-benevolent dictator are really. really. bad. So why not jump language to one where things aren't quite so arbi('y', 'trar') (wait I think its arbi('trar','y'))? Because you have a job that pays you money to write php. Or you have a dad who is an air cooled volkswagen mechanic so you don't know when to say "no, this platform is dead" and then after years of denial you learn that sometimes old things can be just as good as new things if you squint the right way. 
+
+So what is it? Well first of all you have to squint enough to think the ~ looks like an m which stands for macro. Secondly you have to accept that ~ is currently used for bitwise Not and accept that you are giving that up. If you don't want to give that up you could use something else like maybe # and let go of those sort of comments? Regardless you can define that in the main Transmogrifier class as the $macroCharacter property. 
+
+Instead of: 
+	array(1, 2, 3, $x, $y, $z);
+its:
+	~(1 2 3 ,x ,y ,z);
+	
+Instead of: 
+	array('key' => $val, $key => array('a', 'b', 'c'))
+its: 
+	~(key: ,val ,key: (a b c)); 
+
+Instead of: 
+	$x = function($y) { return 1 + $y; }; echo $x(60);
+its:
+	echo ~[$y | 1 + $y](60);
+
+Instead of:
+	$y = array('c', 'd', 'e');
+	$x = array_splice(array('a', 'b', null, 'f', 'g'), 2, 1, $y);
+
+its:
+	$y = ~(c d e);
+	$x = ~(a b ,@y f g);
+
+Instead of: 
+	array('key' => 6 + 6,  $obj->getKey($val) => 'value');
+its:
+	~(key: {6 + 6}, {$obj->getKey($val)}: 'value');
+	
+
+Full blown macros are in the works too where ~ followed by a macro name captures all the arguments after it up til a ; This means { } etc.  

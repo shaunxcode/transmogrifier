@@ -11,6 +11,7 @@ function arrayAt($array, $key) {
 
 class Transmogrifier
 {
+	private $macroCharacter = '~';
 	private $phpCode;
 	private $strings = array();
 
@@ -73,7 +74,7 @@ class Transmogrifier
 	{
 		$max = strlen($code);
 		
-		while(($start = strpos($code, '~')) !== false){
+		while(($start = strpos($code, $this->macroCharacter)) !== false){
 			$end = false;
 			$pos = $start;
 			$open = 0;	      
@@ -150,8 +151,8 @@ class Transmogrifier
 					'/\s\s+/', 
 					' ', 
 					str_replace(
-						array('(', ')', '~', '@', ',' , ':', "\n", "\t"), 
-						array(' ( ', ' ) ', ' ~ ', ' @ ', ' , ', ' : ', ' ', ' '), 
+						array('(', ')', $this->macroCharater, '@', ',' , ':', "\n", "\t"), 
+						array(' ( ', ' ) ', ' ' . $this->macroCharacter . ' ', ' @ ', ' , ', ' : ', ' ', ' '), 
 						$code))));
 	}
 
