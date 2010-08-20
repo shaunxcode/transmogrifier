@@ -74,12 +74,16 @@ class Transmogrifier
 	{
 		$max = strlen($code);
 		
+		$brackets = array('[' => ']', '{' => '}', '(' => ')');
+		
 		while(($start = strpos($code, $this->macroCharacter)) !== false){
 			$end = false;
 			$pos = $start;
 			$open = 0;	      
 			$first = false;
 			$subIndex = 1;
+			$openBracket = false;
+			$closeBracket = false;
 			
 			while(!$end || $pos < $max) {
 				$subIndex++;
@@ -87,19 +91,60 @@ class Transmogrifier
 				if(!$first && $char != ' ' && $char != "\n" && $char != "\r" && $char != "\t") {
 					$first = $char; 
 					$parenStart = $subIndex;
+					if(isset($brackets[$first])) {
+						$openBracket = $first;
+						$closeBracket = $brackets[$first];
+					} else {
+						die("IN A MACRO! - finish word to find it and then process it - more complex need to treat each bracket form appropriately");
+					}
 				}
 
-								
-				if($char == '(') {
+				if($char == $openBracket) {
 					$open++;
 					continue;
 				}
 
-				if($char == ')') {
+				if($char == $closeBracket) {
 					$open--;
 					if($open == 0) {
-						$sub = substr($code, $start, ($pos-$start)+1);						
-						$code = str_replace($sub, $this->process($this->tokenize($this->replaceNativePhp(substr($sub, $parenStart, -1)))), $code);
+						$sub = substr($code, $start, ($pos-$start)+1);
+						switch($openBracket) {
+							case '[':
+								$replace = $this->processSquareLambda(substr($sub, $parenStart, -1));
+							
+								//check for immediate application
+								$subPos = $pos;
+								$subBracketOpen = false;
+								while($subPos < $max) {
+									$subChar = $code[++$subPos];
+									if(!$subBracketOpen && $subChar == '(') {
+										$subBracketStart = $subPos;
+										$subBracketOpen = 1;
+										continue;
+									}
+									
+									if($subChar == '(') {
+										$subBracketOpen++;
+										continue;
+									}
+									
+									if($subChar == ')') {
+										$subBracketOpen--;
+										if($subBracketOpen == 0) {
+											$replace = 'call_user_func_array(' . $replace . ', array' . substr($code, $subBracketStart, ($subPos - $subBracketStart) + 1) . ')';
+											$sub = substr($code, $start, ($subPos - $start) + 1);
+											break;
+										}
+									}
+								}
+							break;
+							
+							case '(':
+								$replace = $this->process($this->tokenize($this->replaceNativePhp(substr($sub, $parenStart, -1))));
+							break;
+						}
+				  		$code = str_replace($sub, $replace, $code);
+						$max = strlen($code);
 						$end = $pos;
 						break;
 					} 
@@ -110,6 +155,35 @@ class Transmogrifier
 		return $code;
 	}
 
+
+	private function processSquareLambda($code) 
+	{
+		$tokens = explode(' ',preg_replace('/\s\s+/', ' ', $code));
+		$args = array();
+		$hasArgs = false;
+		$inBody = false;
+		foreach($tokens as $i => $token) {
+			if(!$inBody && $token[0] == '$') {
+				$args[] = $token;
+				continue;
+			} else if(!$inBody && $token == '|') {
+				$hasArgs = true;
+				break;
+			} else {
+				$inBody = true;
+			}
+		}
+		
+		if($hasArgs) {
+			$parts = explode('|', $code);
+			$function = 'function('.implode(',', $args).'){return ' . $parts[1] . ';}';			
+		} else {
+			$function = 'function(){return ' . $code . ';}';
+		}
+		
+		return $function;
+	}
+	
 	private function replaceNativePhp($code)
 	{
 		$max = strlen($code);
@@ -151,8 +225,8 @@ class Transmogrifier
 					'/\s\s+/', 
 					' ', 
 					str_replace(
-						array('(', ')', $this->macroCharater, '@', ',' , ':', "\n", "\t"), 
-						array(' ( ', ' ) ', ' ' . $this->macroCharacter . ' ', ' @ ', ' , ', ' : ', ' ', ' '), 
+						array('(', ')', $this->macroCharacter, '@', ',' , ':', "\n", "\t", '[', ']', '{', '}', '|'), 
+						array(' ( ', ' ) ', ' ' . $this->macroCharacter . ' ', ' @ ', ' , ', ' : ', ' ', ' ', ' [ ', ' ] ', ' { ', ' } ', ' | '), 
 						$code))));
 	}
 

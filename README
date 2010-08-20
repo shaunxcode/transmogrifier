@@ -48,7 +48,23 @@ its:
 Instead of: 
 	array('key' => 6 + 6,  $obj->getKey($val) => 'value');
 its:
-	~(key: {6 + 6}, {$obj->getKey($val)}: 'value');
+	~(key: {6 + 6} {$obj->getKey($val)}: 'value');
 	
 
 Full blown macros are in the works too where ~ followed by a macro name captures all the arguments after it up til a ; This means { } etc.  
+
+~MacroName [$l | $ambda] {$native + $php + $code} someWord {$some / $other->code(); $with($multiple->$lines())}
+
+~map [$_ + 6] (1 2 3);
+
+is like writing: 
+
+Macro\map(~[$_ + 6], ~(1 2 3));
+
+Which ends up as:
+
+array_map(function($_) { return $_ + 6;}, array(1, 2, 3));
+
+Do you see the pyramid? This is a good way of illustrating the power of macros. 
+
+I suspect w/ the right mindset one could use these macros for dependency injection
