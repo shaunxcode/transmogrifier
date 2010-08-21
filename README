@@ -85,3 +85,7 @@ Also works. You will notice that you don't have to put a ~ infront of a square l
 $adder = ~[$x | ~[$y | ~[$z | $x + $y + z]]](5)(6);
 
 Not that ugly just a little noiser but technically either works.  
+
+Also lexical scope works as it would in lisp or smalltalk. So the above adder code would end up looking like: 
+
+$adder = call_user_func_array(call_user_func_array(function($x) { return function($y) use(&$x) { return function($z) use(&$x, &$z) { return $x + $y + $z;};};}, array(5)), array(6));
