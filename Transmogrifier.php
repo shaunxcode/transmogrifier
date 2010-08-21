@@ -70,7 +70,7 @@ class Transmogrifier
 		return str_replace(array_keys($this->strings), $this->strings, $this->phpCode);
 	}
 
-	private function expandTildeExpressions($code)
+	private function expandTildeExpressions($code, $scope = false)
 	{
 		$code = trim($code);
 		//this is just so square bracket expression can have sub-functions w/o extra ~ 
@@ -115,13 +115,15 @@ class Transmogrifier
 						$sub = substr($code, $start, ($pos-$start)+1);
 						switch($openBracket) {
 							case '[':
-								$replace = $this->processSquareLambda(substr($sub, $parenStart, -1));
+								$replace = $this->processSquareLambda(substr($sub, $parenStart, -1), $scope);
 							
 								//check for immediate application
 								$subPos = $pos;
 								$subBracketOpen = false;
 								while($subPos < $max) {
-									$subChar = $code[++$subPos];
+									if(!isset($code[++$subPos])) break;
+									$subChar = $code[$subPos];
+
 									if(!$subBracketOpen && !in_array($subChar, array('(', "\n", "\t", ' '))) {
 										//only acceptable chars are in array above
 										break;
@@ -161,11 +163,12 @@ class Transmogrifier
 
 			}
 		}
+
 		return $code;
 	}
 
 
-	private function processSquareLambda($code) 
+	private function processSquareLambda($code, $scope = false) 
 	{
 		$tokens = explode(' ',preg_replace('/\s\s+/', ' ', $code));
 		$args = array();
@@ -173,7 +176,7 @@ class Transmogrifier
 		$inBody = false;
 		foreach($tokens as $i => $token) {
 			if(!$inBody && $token[0] == '$') {
-				$args[] = $token;
+				$args[$token] = true;
 				continue;
 			} else if(!$inBody && $token == '|') {
 				$hasArgs = true;
@@ -187,13 +190,30 @@ class Transmogrifier
 			$parts = explode('|', $code);
 			array_shift($parts);
 			$body = implode('|', $parts);
-			$args = implode(',', $args);
 		} else {
-			$args = '';
 			$body = $code;
 		}
 
-		return $function = '(function(' . $args . '){return ' . $this->expandTildeExpressions($body) . ';})';
+		if(!$scope) { 
+			$scope = (object)array('args' => array());
+		} 		
+
+		$body = $this->expandTildeExpressions($body, $scope);
+
+		preg_match_all('/\$[a-zA-Z_\x7f-\xff][a-zA-Z0-9_\x7f-\xff]*/', $body, $matches); 
+
+		$uses = array();
+		if(isset($matches[0])) {
+			foreach($matches[0] as $var) {
+				if(!isset($args[$var]) && !isset($scope->args[$var])) {
+					$uses[$var] = '&' . $var;
+				}
+			}
+		}
+
+		$scope->args = array_merge($args, $scope->args);
+					
+		return $function = 'function(' . implode(',', array_keys($args)) . ') ' . (empty($uses) ? '' : 'use(' . implode(',', $uses). ')') .' {return ' . $body . ";}";
 	}
 	
 	private function replaceNativePhp($code)
