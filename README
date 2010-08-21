@@ -67,4 +67,10 @@ array_map(function($_) { return $_ + 6;}, array(1, 2, 3));
 
 Do you see the pyramid? This is a good way of illustrating the power of macros. 
 
-I suspect w/ the right mindset one could use these macros for dependency injection
+Immediate arguments to lambdas work so you can do stuff like: 
+
+echo [$x | $x * 2](333);
+
+Which becomes: 
+
+echo call_user_func_array(function($x) { return $x * 2;}, array(333));
