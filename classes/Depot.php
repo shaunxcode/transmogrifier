@@ -1,27 +1,30 @@
 <?php
 
 class Depot {
+	~property age;
+	
 	public function dispatch()
 	{
 		$x = ~(555 {555 + 555});
 		print_r(~(a: b c: ,x e: (a b c 1 2 (3 4)) ,@x));
 		
 		echo ~[$x | [$y | [$z | $x + $y + $z]]](6)(7)(8);
-
-		echo "<hr>";
 		
+		~ehr; 
+			
 		echo ~[$y | 1 + $y](60);
 		
-		echo "<hr>";
+		~ehr;
 		
 		echo ~[$_ + $_](3);
 		
-		echo "<hr>";
+		~ehr;
 		
 		echo ~[[$x | $_ + $x]](1)(2);
 		
-		echo "<hr>";
+		~ehr;
 		
 		print_r(~map [$_ + 6] (1 2 3));	
+		
 	}
 }

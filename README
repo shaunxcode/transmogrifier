@@ -1,26 +1,16 @@
-I HAVE A FEELING A LOT OF PEOPLE WILL DEMAND TO KNOW:
- _   _____   _   _   _   _   _   _____  
-| | |  _  | | | | | | | | | | | |  _  | AND YOU NEED TO KEEP 
-| | | | | | | | | | | | | | | | | | | | IN MIND - THESE PEOPLE
-| | | | | | | | | |_| | | |_| | |_| | | WILL ALWAYS BE THERE
-| | | | | | | | |  _  | |__  _|    _| | DRAGGING THEIR FEET
-| | | | | | | | | | | |   | |     |  _| AND ARGUING ABOUT
-| |_| | | |_| | | | | |   | |     | |   THE BEST WAY TO HAVE
-|_____| |_____| |_| |_|   |_|     |_|   LAMDAS IN THEIR SUITY
- _____________________________     _    LANGUAGE - WHEN YOU  
-|_____________________________|   |_|   JUST ADD THEM BECAUSE!
-
 Macro expansion for situationists? What does that even mean?
 
 sit·u·a·tion·ism   [sich-oo-ey-shuh-niz-uhm]
 –noun Psychology .
 the theory that behavior is chiefly response to immediate situations.
 
-When we are programming our immediate situation is text, syntax, grammar.
+When we are programming in php our text, syntax, grammar is pretty much all decided for us ahead of time. So why not jump language to one where things aren't quite so arbi('y', 'trar') (wait I think its arbi('trar','y'))? Because you have a job that pays you money to write php. Or you have a dad who is an air cooled volkswagen mechanic so you don't know when to say "no, this platform is dead" and then after years of denial you learn that sometimes old things can be just as good as new things if you squint the right way. 
 
-When we are programming in php our text, syntax, grammar is pretty much all decided for us ahead of time. And a lot of the choices that were made ahead of time by the not-so-benevolent dictator are really. really. bad. So why not jump language to one where things aren't quite so arbi('y', 'trar') (wait I think its arbi('trar','y'))? Because you have a job that pays you money to write php. Or you have a dad who is an air cooled volkswagen mechanic so you don't know when to say "no, this platform is dead" and then after years of denial you learn that sometimes old things can be just as good as new things if you squint the right way. 
+So what is it? Well firstly you have to squint enough to think the ~ looks like an m which stands for macro. Secondly you have to accept that ~, which  is currently used for bitwise Not, will no longer work in such a capacity. If you don't want to give that up you could use something else like maybe # and let go of those sort of comments? Regardless you can define that in the main Transmogrifier class as the $macroCharacter property. 
 
-So what is it? Well first of all you have to squint enough to think the ~ looks like an m which stands for macro. Secondly you have to accept that ~ is currently used for bitwise Not and accept that you are giving that up. If you don't want to give that up you could use something else like maybe # and let go of those sort of comments? Regardless you can define that in the main Transmogrifier class as the $macroCharacter property. 
+The idea is to allow you to use a few custom "reader macros" along with "user defined macros" inline with native php. The php would then of course need to be preprocessed - I mean what is more reasonable than a pre-pre-hypertext-preprocssor-pre-processor? By default there is a bootstrap file which you could include from something like public/index.php which inlcudes the transmogrifier and than also defines the __autoload method to call Transmogrifier::includeFile on each relevant class file. The transmogrified files are stored in a .transmogrified directory off of the directory that they are found in. In theory you could have it check timestamps to see if the files even need to be transmogrified or even have a prpoduction mode in which all the transmogrified files/codebase are exported so it is just native php w/ no magic. 
+
+Quasiquote:
 
 Instead of: 
 	array(1, 2, 3, $x, $y, $z);
@@ -31,11 +21,6 @@ Instead of:
 	array('key' => $val, $key => array('a', 'b', 'c'))
 its: 
 	~(key: ,val ,key: (a b c)); 
-
-Instead of: 
-	$x = function($y) { return 1 + $y; }; echo $x(60);
-its:
-	echo ~[$y | 1 + $y](60);
 
 Instead of:
 	$y = array('c', 'd', 'e');
@@ -49,43 +34,32 @@ Instead of:
 	array('key' => 6 + 6,  $obj->getKey($val) => 'value');
 its:
 	~(key: {6 + 6} {$obj->getKey($val)}: 'value');
-	
 
-Full blown macros are in the works too where ~ followed by a macro name captures all the arguments after it up til a ; This means { } etc.  
 
-~MacroName [$l | $ambda] {$native + $php + $code} someWord {$some / $other->code(); $with($multiple->$lines())}
+Closures: 
 
-~map [$_ + 6] (1 2 3);
+Instead of: 
+	$x = function($y) { return 1 + $y; }; echo $x(60);
+its:
+	echo ~[$y | 1 + $y](60);
 
-is like writing: 
+	Stuff like: 
 
-Macro\map(~[$_ + 6], ~(1 2 3));
-
-Which ends up as:
-
-array_map(function($_) { return $_ + 6;}, array(1, 2, 3));
-
-Do you see the pyramid? This is a good way of illustrating the power of macros. 
-
-Immediate arguments to lambdas work so you can do stuff like: 
-
-echo ~[$x | $x * 2](333);
-
-Which becomes: 
-
-echo call_user_func_array(function($x) { return $x * 2;}, array(333));
-
-Stuff like: 
-
-$adder = ~[$x | [$y | [$z | $x + y + z]]](5)(6); 
-echo $adder(7);
+	$adder = ~[$x | [$y | [$z | $x + y + z]]](5)(6); 
+	echo $adder(7);
 
 Also works. You will notice that you don't have to put a ~ infront of a square lambda if it is the first thing inside the body of another square lambda. If it is not the first thing you would need to put a ~ before it. With funcs building/returning funcs as often as happens it seems like a nice piece of arbitrary parsing magic to allow. Other wise its:
 
-$adder = ~[$x | ~[$y | ~[$z | $x + $y + z]]](5)(6);
+	$adder = ~[$x | ~[$y | ~[$z | $x + $y + z]]](5)(6);
 
 Not that ugly just a little noiser but technically either works.  
 
 Also lexical scope works as it would in lisp or smalltalk. So the above adder code would end up looking like: 
 
-$adder = call_user_func_array(call_user_func_array(function($x) { return function($y) use(&$x) { return function($z) use(&$x, &$z) { return $x + $y + $z;};};}, array(5)), array(6));
+	$adder = call_user_func_array(call_user_func_array(function($x) { return function($y) use(&$x) { return function($z) use(&$x, &$z) { return $x + $y + $z;};};}, array(5)), array(6));
+
+Macros:
+
+	~map [$_ + 6] (1 2 3);
+is like writing: 
+	array_map(function($_) { return $_ + 6;}, array(1, 2, 3));

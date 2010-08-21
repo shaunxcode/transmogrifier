@@ -206,7 +206,7 @@ class Transmogrifier
 			}
 		}
 
-		return $code;
+		return str_replace(array(';;', '};'), array(';', '}'), $code);
 	}
 
 	private function processMacro($code, $scope = false)
@@ -241,8 +241,8 @@ class Transmogrifier
 					$arg = '';
 				}
 			}
-			
-			if(!$open && !empty($arg) && in_array($char, array(' ', "\n", "\r", "\t"))) {
+
+			if((!$open && !empty($arg) && in_array($char, array(' ', "\n", "\r", "\t"))) || $pos == $max) {
 				$arg = str_replace(' ', '', trim($arg));
 				if(!empty($arg)) {
 					$args[] = $arg;
@@ -250,16 +250,16 @@ class Transmogrifier
 				$arg = '';
 			}
 		}
-		
+
 		$macroName = array_shift($args);		
 		/* EVENTUALLY use Transmogrifier::includeFile recursively! so macros are transmogrified and ~macro can be used */
 		$macroFile = APPROOT . '/macros/' . $macroName . '.php';
+print_r($args);
 		if(!file_exists($macroFile)) {
 			throw new Exception("Macro $macroName does not exist");
 		} else {
 			require_once $macroFile;
-			return implode('', call_user_func_array($macroName . 'Macro', $args));
-	
+			return call_user_func_array($macroName . 'Macro', $args);
 		}
 	}
 
