@@ -72,12 +72,16 @@ class Transmogrifier
 
 	private function expandTildeExpressions($code)
 	{
+		$code = trim($code);
+		//this is just so square bracket expression can have sub-functions w/o extra ~ 
+		if($code[0] == '[') {
+			$code = '~' . $code;
+		}
+		
 		$max = strlen($code);
 		
 		$brackets = array('[' => ']', '{' => '}', '(' => ')');
-		
 		while(($start = strpos($code, $this->macroCharacter)) !== false){
-			$end = false;
 			$pos = $start;
 			$open = 0;	      
 			$first = false;
@@ -85,9 +89,10 @@ class Transmogrifier
 			$openBracket = false;
 			$closeBracket = false;
 			
-			while(!$end || $pos < $max) {
+			while($pos < $max) {
 				$subIndex++;
 				$char = $code[++$pos];
+
 				if(!$first && $char != ' ' && $char != "\n" && $char != "\r" && $char != "\t") {
 					$first = $char; 
 					$parenStart = $subIndex;
@@ -117,6 +122,11 @@ class Transmogrifier
 								$subBracketOpen = false;
 								while($subPos < $max) {
 									$subChar = $code[++$subPos];
+									if(!$subBracketOpen && !in_array($subChar, array('(', "\n", "\t", ' '))) {
+										//only acceptable chars are in array above
+										break;
+									}
+									
 									if(!$subBracketOpen && $subChar == '(') {
 										$subBracketStart = $subPos;
 										$subBracketOpen = 1;
@@ -131,9 +141,9 @@ class Transmogrifier
 									if($subChar == ')') {
 										$subBracketOpen--;
 										if($subBracketOpen == 0) {
-											$replace = 'call_user_func_array(' . $replace . ', array' . substr($code, $subBracketStart, ($subPos - $subBracketStart) + 1) . ')';
+											$replace = '(call_user_func_array(' . $replace . ', array' . substr($code, $subBracketStart, ($subPos - $subBracketStart) + 1) . '))';
 											$sub = substr($code, $start, ($subPos - $start) + 1);
-											break;
+											continue;
 										}
 									}
 								}
@@ -145,7 +155,6 @@ class Transmogrifier
 						}
 				  		$code = str_replace($sub, $replace, $code);
 						$max = strlen($code);
-						$end = $pos;
 						break;
 					} 
 				}
@@ -176,12 +185,15 @@ class Transmogrifier
 		
 		if($hasArgs) {
 			$parts = explode('|', $code);
-			$function = 'function('.implode(',', $args).'){return ' . $parts[1] . ';}';			
+			array_shift($parts);
+			$body = implode('|', $parts);
+			$args = implode(',', $args);
 		} else {
-			$function = 'function(){return ' . $code . ';}';
+			$args = '';
+			$body = $code;
 		}
-		
-		return $function;
+
+		return $function = '(function(' . $args . '){return ' . $this->expandTildeExpressions($body) . ';})';
 	}
 	
 	private function replaceNativePhp($code)

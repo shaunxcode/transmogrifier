@@ -6,6 +6,6 @@ class Depot {
 		$x = ~(555 {555 + 555});
 		print_r(~(a: b c: ,x e: (a b c 1 2 (3 4)) ,@x));
 		
-		echo ~[$x | $x * $x](600);
+		echo ~[$x | [$y | $x + $y]](6)(7);
 	}
 }
