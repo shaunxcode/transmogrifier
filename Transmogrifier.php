@@ -88,11 +88,52 @@ class Transmogrifier
 			$subIndex = 1;
 			$openBracket = false;
 			$closeBracket = false;
+			$macro = false;
+			$priorChar = false;
 			
 			while($pos < $max) {
 				$subIndex++;
-				$char = $code[++$pos];
+				if(!isset($code[++$pos])) break;
+				$char = $code[$pos];
 
+				//capture macro and process 
+				if($macro) {
+					if(!$open && in_array($char, array(';', ',', '.', ':', '?', ']', ')', '}'))) {
+
+						$sub = substr($code, $start, ($pos - $start));
+						$replace = $this->processMacro($macro, $scope);
+
+				  		$code = str_replace($sub, $replace, $code);
+						$max = strlen($code);
+						$macro = false;
+						continue;
+					}
+					
+					if(!$openBracket && isset($brackets[$char])) {
+						$openBracket = $char;
+						$closeBracket = $brackets[$char];
+						if($priorChar !== '~') {
+							$macro .= '~';
+						}
+					}
+					
+					if($char == $openBracket) {
+						$open++;
+					} else 	if($char == $closeBracket) {
+						$open--;
+						if($open == 0) {
+							$openBracket = false;
+						}
+					}
+
+					if(!in_array($char, array("\n", ' ', "\r", "\t"))) {
+						$priorChar = $char;
+					}
+					
+					$macro .= $char;
+					continue;
+				}
+				
 				if(!$first && $char != ' ' && $char != "\n" && $char != "\r" && $char != "\t") {
 					$first = $char; 
 					$parenStart = $subIndex;
@@ -100,16 +141,17 @@ class Transmogrifier
 						$openBracket = $first;
 						$closeBracket = $brackets[$first];
 					} else {
-						die("IN A MACRO! - finish word to find it and then process it - more complex need to treat each bracket form appropriately");
+						$macro = $first;
+						continue;
 					}
 				}
 
-				if($char == $openBracket) {
+				if($char === $openBracket) {
 					$open++;
 					continue;
 				}
 
-				if($char == $closeBracket) {
+				if($char === $closeBracket) {
 					$open--;
 					if($open == 0) {
 						$sub = substr($code, $start, ($pos-$start)+1);
@@ -167,6 +209,59 @@ class Transmogrifier
 		return $code;
 	}
 
+	private function processMacro($code, $scope = false)
+	{
+		$brackets = array('[' => ']', '{' => '}', '(' => ')');
+		
+		$args = array();		
+		$max = strlen($code); 
+		$pos = 0;
+		$open = 0;
+		$openBracket = false;
+		$closeBracket = false;
+		$arg = '';
+		while($pos < $max) {
+			$char = $code[$pos++];
+
+			$arg .= $char;
+						
+			if(!$open && isset($brackets[$char])) {
+				$openBracket = $char;
+				$closeBracket = $brackets[$char];
+			}
+			
+			if($char === $openBracket) {
+				$open++;
+			}
+			
+			if($char === $closeBracket) {
+				$open--;
+				if($open == 0) {
+					$args[] = $this->expandTildeExpressions($arg, $scope);
+					$arg = '';
+				}
+			}
+			
+			if(!$open && !empty($arg) && in_array($char, array(' ', "\n", "\r", "\t"))) {
+				$arg = str_replace(' ', '', trim($arg));
+				if(!empty($arg)) {
+					$args[] = $arg;
+				}
+				$arg = '';
+			}
+		}
+		
+		$macroName = array_shift($args);		
+		/* EVENTUALLY use Transmogrifier::includeFile recursively! so macros are transmogrified and ~macro can be used */
+		$macroFile = APPROOT . '/macros/' . $macroName . '.php';
+		if(!file_exists($macroFile)) {
+			throw new Exception("Macro $macroName does not exist");
+		} else {
+			require_once $macroFile;
+			return implode('', call_user_func_array($macroName . 'Macro', $args));
+	
+		}
+	}
 
 	private function processSquareLambda($code, $scope = false) 
 	{
@@ -221,7 +316,7 @@ class Transmogrifier
 		
 		$scope->args = array_merge($args, $scope->args);
 		
-		return $function = 'function(' . implode(',', $args) . ') ' . (empty($uses) ? '' : 'use(' . implode(',', $uses). ')') .' {return ' . $body . ";}";
+		return $function = '(function(' . implode(',', $args) . ') ' . (empty($uses) ? '' : 'use(' . implode(',', $uses). ')') .' {return ' . $body . ";})";
 	}
 	
 	private function replaceNativePhp($code)

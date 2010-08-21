@@ -19,8 +19,9 @@ class Depot {
 		echo "<hr>";
 		
 		echo ~[[$x | $_ + $x]](1)(2);
-
 		
+		echo "<hr>";
 		
+		print_r(~map [$_ + 6] (1 2 3));	
 	}
 }
