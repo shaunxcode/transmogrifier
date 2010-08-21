@@ -176,7 +176,7 @@ class Transmogrifier
 		$inBody = false;
 		foreach($tokens as $i => $token) {
 			if(!$inBody && $token[0] == '$') {
-				$args[$token] = true;
+				$args[$token] = $token;
 				continue;
 			} else if(!$inBody && $token == '|') {
 				$hasArgs = true;
@@ -192,6 +192,7 @@ class Transmogrifier
 			$body = implode('|', $parts);
 		} else {
 			$body = $code;
+			$args = array();
 		}
 
 		if(!$scope) { 
@@ -211,9 +212,16 @@ class Transmogrifier
 			}
 		}
 
+		if(empty($args) && strpos($body, '$_') !== false) {
+			$args['$_'] = '$_ = false';
+			if(isset($uses['$_'])) {
+				unset($uses['$_']);
+			}
+		}
+		
 		$scope->args = array_merge($args, $scope->args);
-					
-		return $function = 'function(' . implode(',', array_keys($args)) . ') ' . (empty($uses) ? '' : 'use(' . implode(',', $uses). ')') .' {return ' . $body . ";}";
+		
+		return $function = 'function(' . implode(',', $args) . ') ' . (empty($uses) ? '' : 'use(' . implode(',', $uses). ')') .' {return ' . $body . ";}";
 	}
 	
 	private function replaceNativePhp($code)
