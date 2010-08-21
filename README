@@ -69,7 +69,7 @@ Do you see the pyramid? This is a good way of illustrating the power of macros.
 
 Immediate arguments to lambdas work so you can do stuff like: 
 
-echo [$x | $x * 2](333);
+echo ~[$x | $x * 2](333);
 
 Which becomes: 
 
