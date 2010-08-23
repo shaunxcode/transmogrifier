@@ -67,7 +67,8 @@ class Transmogrifier
 	
 	public function asPhp()
 	{
-		return str_replace(array_keys($this->strings), $this->strings, $this->phpCode);
+		$reversed = array_reverse($this->strings, true);
+		return str_replace(array_keys($reversed), $reversed, $this->phpCode);
 	}
 
 	private function expandTildeExpressions($code, $scope = false)
@@ -254,7 +255,6 @@ class Transmogrifier
 		$macroName = array_shift($args);		
 		/* EVENTUALLY use Transmogrifier::includeFile recursively! so macros are transmogrified and ~macro can be used */
 		$macroFile = APPROOT . '/macros/' . $macroName . '.php';
-print_r($args);
 		if(!file_exists($macroFile)) {
 			throw new Exception("Macro $macroName does not exist");
 		} else {
@@ -265,10 +265,11 @@ print_r($args);
 
 	private function processSquareLambda($code, $scope = false) 
 	{
-		$tokens = explode(' ',preg_replace('/\s\s+/', ' ', $code));
+		$tokens = explode(' ',preg_replace('/\s\s+/', ' ', str_replace(array(',', '|', '='), array(' , ', ' | ', ' = '), $code)));
 		$args = array();
 		$hasArgs = false;
 		$inBody = false;
+		print_r($tokens);
 		foreach($tokens as $i => $token) {
 			if(!$inBody && $token[0] == '$') {
 				$args[$token] = $token;
